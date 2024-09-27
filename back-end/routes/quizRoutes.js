@@ -1,46 +1,51 @@
+// routes/quizRoutes.js
 const express = require('express');
 const router = express.Router();
 const Quiz = require('../models/Quiz');
 
-// Add a new quiz
-router.post('/quizzes', async (req, res) => {
-    try {
-      const quiz = new Quiz(req.body);
-      await quiz.save();
-      res.status(201).json(quiz);
-    } catch (error) {
-      res.status(400).json({ error: 'Failed to create quiz' });
-    }
-  });  
-
 // Get all quizzes
 router.get('/quizzes', async (req, res) => {
-  const quizzes = await Quiz.find();
-  res.json(quizzes);
+  try {
+    const quizzes = await Quiz.find();
+    res.json(quizzes);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch quizzes' });
+  }
 });
 
 // Get quiz by ID
 router.get('/quizzes/:id', async (req, res) => {
-  const quiz = await Quiz.findById(req.params.id);
-  res.json(quiz);
+  try {
+    const quiz = await Quiz.findById(req.params.id);
+    if (!quiz) return res.status(404).json({ error: 'Quiz not found' });
+    res.json(quiz);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch quiz' });
+  }
 });
 
 // Submit quiz answers
 router.post('/quizzes/:id/submit', async (req, res) => {
   const { answers } = req.body;
-  const quiz = await Quiz.findById(req.params.id);
 
-  let score = 0;
-  const correctAnswers = [];
+  try {
+    const quiz = await Quiz.findById(req.params.id);
+    if (!quiz) return res.status(404).json({ error: 'Quiz not found' });
 
-  quiz.questions.forEach((question, index) => {
-    if (question.correctAnswer === answers[index]) {
-      score++;
-    }
-    correctAnswers.push(question.correctAnswer);
-  });
+    let score = 0;
+    const correctAnswers = [];
 
-  res.json({ score, correctAnswers });
+    quiz.questions.forEach((question, index) => {
+      if (question.correctAnswer === answers[index]) {
+        score++;
+      }
+      correctAnswers.push(question.correctAnswer);
+    });
+
+    res.json({ score, correctAnswers });
+  } catch (error) {
+    res.status(500).json({ error: 'Error submitting answers' });
+  }
 });
 
 module.exports = router;

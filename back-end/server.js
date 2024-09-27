@@ -1,64 +1,30 @@
+// server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const Quiz = require('./models/Quiz');
+const dotenv = require('dotenv')
+const bodyParser = require('body-parser');
 const quizRoutes = require('./routes/quizRoutes');
+require('dotenv').config(); // For environment variables
 
 const app = express();
-app.use(cors());
-app.use(express.json());
 
-mongoose.connect('mongodb://localhost:27017/quizApp', {
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+
+// Database connection
+mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-});
+})
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.error('MongoDB connection error:', err));
 
-const quizzes = [
-    {
-      title: 'General Knowledge',
-      description: 'Test your general knowledge with this quiz!',
-      questions: [
-        {
-          text: 'What is the capital of France?',
-          choices: ['Paris', 'London', 'Berlin', 'Rome'],
-          correctAnswer: 'Paris',
-        },
-        {
-          text: 'Who wrote "To Kill a Mockingbird"?',
-          choices: ['Harper Lee', 'Mark Twain', 'Ernest Hemingway', 'F. Scott Fitzgerald'],
-          correctAnswer: 'Harper Lee',
-        },
-      ],
-    },
-    {
-      title: 'Math Quiz',
-      description: 'Basic math questions to challenge you.',
-      questions: [
-        {
-          text: 'What is 2 + 2?',
-          choices: ['3', '4', '5', '6'],
-          correctAnswer: '4',
-        },
-        {
-          text: 'What is the square root of 16?',
-          choices: ['2', '4', '6', '8'],
-          correctAnswer: '4',
-        },
-      ],
-    },
-  ];
-
-  Quiz.insertMany(quizzes)
-  .then(() => {
-    console.log('Quizzes added');
-    mongoose.connection.close();
-  })
-  .catch((err) => {
-    console.error('Error adding quizzes:', err);
-  });
-
+// API Routes
 app.use('/api', quizRoutes);
 
+// Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

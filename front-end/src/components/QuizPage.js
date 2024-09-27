@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
-import API from '../api';
+import API from '../api/api';
 
 const QuizPage = () => {
   const { id } = useParams();
@@ -13,8 +12,12 @@ const QuizPage = () => {
 
   useEffect(() => {
     const fetchQuiz = async () => {
-      const response = await API.get(`/quizzes/${id}`);
-      setQuiz(response.data);
+      try {
+        const response = await API.get(`/quizzes/${id}`);
+        setQuiz(response.data);
+      } catch (error) {
+        console.error('Error fetching quiz', error);
+      }
     };
     fetchQuiz();
   }, [id]);
@@ -24,9 +27,15 @@ const QuizPage = () => {
   };
 
   const handleSubmit = async () => {
-    const response = await API.post(`/quizzes/${id}/submit`, { answers });
-    setScore(response.data.score);
-    navigate('/score', { state: { score: response.data.score, correctAnswers: response.data.correctAnswers } });
+    try {
+      const response = await API.post(`/quizzes/${id}/submit`, { answers });
+      setScore(response.data.score);
+      navigate('/score', {
+        state: { score: response.data.score, correctAnswers: response.data.correctAnswers },
+      });
+    } catch (error) {
+      console.error('Error submitting quiz', error);
+    }
   };
 
   if (!quiz) return <div>Loading...</div>;
@@ -34,29 +43,42 @@ const QuizPage = () => {
   const question = quiz.questions[currentQuestion];
 
   return (
-    <div className="container">
-      <h2>{quiz.title}</h2>
-      <h3>{question.text}</h3>
-      <ul>
-        {question.choices.map((choice, index) => (
-          <li key={index}>
-            <label>
+    <div className="container mx-auto mt-10 px-4">
+      <h2 className="text-2xl font-bold text-center mb-4">{quiz.title}</h2>
+      <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
+        <h4 className="text-xl font-semibold mb-4">{question.text}</h4>
+        <ul className="space-y-4">
+          {question.choices.map((choice, index) => (
+            <li key={index} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-100 transition duration-200">
               <input
                 type="radio"
                 name={`question-${currentQuestion}`}
                 onClick={() => handleAnswerSelect(currentQuestion, choice)}
+                className="form-radio text-blue-500 focus:ring-blue-500"
               />
-              {choice}
-            </label>
-          </li>
-        ))}
-      </ul>
+              <label className="text-gray-800">{choice}</label>
+            </li>
+          ))}
+        </ul>
+      </div>
 
-      {currentQuestion < quiz.questions.length - 1 ? (
-        <button onClick={() => setCurrentQuestion(currentQuestion + 1)}>Next</button>
-      ) : (
-        <button onClick={handleSubmit}>Submit</button>
-      )}
+      <div className="flex justify-between mt-4">
+        {currentQuestion < quiz.questions.length - 1 ? (
+          <button
+            className="bg-blue-600 text-white rounded-md px-4 py-2 transition duration-200 hover:bg-blue-700"
+            onClick={() => setCurrentQuestion(currentQuestion + 1)}
+          >
+            Next
+          </button>
+        ) : (
+          <button
+            className="bg-green-600 text-white rounded-md px-4 py-2 transition duration-200 hover:bg-green-700"
+            onClick={handleSubmit}
+          >
+            Submit
+          </button>
+        )}
+      </div>
     </div>
   );
 };
